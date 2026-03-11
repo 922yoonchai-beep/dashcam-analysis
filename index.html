@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>行车记录仪 - VOC 智能分析与客服中台</title>
+    <title>行车记录仪 - VOC 智能中台</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         .header { text-align: center; margin-bottom: 20px; }
@@ -20,11 +20,9 @@
         button { background-color: #3498db; color: white; border: none; cursor: pointer; transition: 0.3s; font-weight: bold; padding: 10px 15px;}
         button:hover { background-color: #2980b9; }
         .export-btn { background-color: #27ae60; margin-top: 15px; width: 100%; }
-        .export-btn:hover { background-color: #2ecc71; }
         .action-btn { background-color: #e67e22; font-size: 16px; padding: 10px 20px; margin-left: 10px;}
-        .action-btn:hover { background-color: #d35400; }
         .report-box { display: none; background: #fff3e0; border-left: 5px solid #e67e22; padding: 20px; margin-bottom: 20px; border-radius: 4px; line-height: 1.6;}
-        textarea { width: 100%; height: 150px; padding: 10px; border: 1px solid #bdc3c7; border-radius: 4px; font-family: 'Segoe UI', sans-serif; font-size: 14px; resize: vertical; margin-top: 10px;}
+        textarea { width: 100%; height: 150px; padding: 10px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 14px; margin-top: 10px;}
         canvas { max-width: 100%; background-color: white; }
     </style>
 </head>
@@ -32,17 +30,17 @@
 
     <div class="header">
         <h1>行车记录仪 VOC 智能分析与客服中台</h1>
-        <p>动态数据大屏 | 自动年度报告 | 智能客服邮件一键生成</p>
+        <p>动态数据大屏 | 自动年度报告 | 智能邮件生成</p>
     </div>
 
     <div class="section import-section">
-        <h3 style="margin: 0; color: #16a085;">📊 全局数据看板控制台</h3>
+        <h3 style="margin: 0; color: #16a085;">📊 导入 Excel 数据 (月份/型号/问题类型/数量)</h3>
         <div>
             <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleFileUpload(event)">
-            <button class="export-btn" style="width:auto; margin-top:0;" onclick="document.getElementById('excelFile').click()">📂 导入售后 Excel 表格</button>
-            <button class="action-btn" onclick="generateReport()">📝 一键生成深度报告</button>
-            <button class="export-btn" style="background-color:#95a5a6; width:auto; margin-top:0; margin-left:10px;" onclick="clearData()">🗑️ 清空面板数据</button>
+            <button class="export-btn" style="width:auto; margin-top:0;" onclick="document.getElementById('excelFile').click()">📂 点击选择文件导入</button>
+            <button class="action-btn" onclick="generateReport()">📝 一键生成分析报告</button>
+            <button class="export-btn" style="background-color:#95a5a6; width:auto; margin-top:0; margin-left:10px;" onclick="clearData()">🗑️ 清空</button>
         </div>
         <p id="uploadStatus" style="font-size: 14px; color: #e74c3c; margin-bottom: 0; font-weight: bold;"></p>
         
-        <div style="margin-top: 15px; padding-top: 15px; border-top:
+        <div style="margin-top: 1
