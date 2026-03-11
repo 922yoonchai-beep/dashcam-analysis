@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>行车记录仪 - VOC 智能中台</title>
+    <title>行车记录仪 - VOC 智能分析与客服中台</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -21,7 +21,7 @@
         button:hover { background-color: #2980b9; }
         .export-btn { background-color: #27ae60; margin-top: 15px; width: auto; }
         .action-btn { background-color: #e67e22; font-size: 16px; padding: 10px 20px; margin-left: 10px;}
-        textarea { width: 100%; height: 130px; padding: 10px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 14px; margin-top: 10px;}
+        textarea { width: 100%; height: 160px; padding: 10px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 14px; margin-top: 10px; font-family: Arial, sans-serif;}
         canvas { max-width: 100%; background-color: white; }
     </style>
 </head>
@@ -29,7 +29,7 @@
 
     <div class="header">
         <h1>行车记录仪 VOC 智能分析与客服中台</h1>
-        <p>动态数据大屏 | 自动防呆纠错 | 智能邮件生成</p>
+        <p>动态数据大屏 | 自动防呆纠错 | 专属智能邮件生成</p>
     </div>
 
     <div class="section import-section">
@@ -52,19 +52,27 @@
     </div>
 
     <div class="section email-section">
-        <h3 style="margin: 0 0 10px 0; color: #2980b9;">📧 智能英文邮件生成</h3>
-        <div style="display: flex; gap: 10px; width: 100%;">
-            <input type="text" id="customerName" placeholder="客户姓名 (选填)">
-            <select id="emailIssue">
-                <option value="hardware">硬件故障(死机/黑屏)</option>
-                <option value="sdcard">内存卡报错(提示格式化)</option>
-                <option value="software">软件/WiFi/漏秒问题</option>
-                <option value="accessory">配件损坏/丢失</option>
+        <h3 style="margin: 0 0 10px 0; color: #2980b9;">📧 专属智能英文邮件生成</h3>
+        <div style="display: flex; gap: 10px; width: 100%; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="customerName" placeholder="客户姓名(选填)" style="width: 120px;">
+            <select id="emailModel">
+                <option value="your dash cam">选择机型(通用)</option>
+                <option value="N5">N5 / N5 PRO</option>
+                <option value="IK7">IK7 / IK11</option>
+                <option value="D2">D2 / D4</option>
+                <option value="L7">L7</option>
+                <option value="Q7">Q7</option>
             </select>
-            <button onclick="generateEmail()" style="background-color: #e67e22;">✨ 生成回复</button>
-            <button onclick="copyEmail()" style="background-color: #27ae60; margin-left: auto;">📋 一键复制</button>
+            <select id="emailIssue">
+                <option value="hardware">硬件故障(死机/黑屏/不开机)</option>
+                <option value="sdcard">内存卡报错(提示格式化)</option>
+                <option value="software">软件/WiFi/APP连接问题</option>
+                <option value="accessory">配件损坏/丢失补发</option>
+            </select>
+            <button onclick="generateEmail()" style="background-color: #e67e22;">✨ 生成专属回复</button>
+            <button onclick="copyEmail()" style="background-color: #27ae60;">📋 一键复制</button>
         </div>
-        <textarea id="emailOutput" placeholder="生成的邮件将在这里预览..."></textarea>
+        <textarea id="emailOutput" placeholder="根据您的专属语料库生成的回复将在这里预览..."></textarea>
     </div>
 
     <div class="container">
@@ -74,6 +82,7 @@
     </div>
 
     <script>
+        // === 1. 图表与数据处理部分 ===
         let allRecords = [];
         const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
         const colors = ['#3498db','#2ecc71','#e74c3c','#f1c40f','#9b59b6','#e67e22','#1abc9c','#34495e','#95a5a6','#d35400'];
@@ -101,11 +110,10 @@
                     let successCount = 0;
 
                     jsonData.forEach(row => {
-                        // 🌟 核心杀手锏：自动把表头里所有的空格、换行符全部抹杀！
                         let cleanRow = {};
                         for (let key in row) {
                             if(key) {
-                                let cleanKey = key.replace(/[\\s\\uFEFF\\xA0]+/g, ''); // 剔除所有隐形空格
+                                let cleanKey = key.replace(/[\\s\\uFEFF\\xA0]+/g, ''); 
                                 cleanRow[cleanKey] = row[key];
                             }
                         }
@@ -132,7 +140,6 @@
                         document.getElementById('uploadStatus').innerText = "❌ 未找到数据。请确认 Excel 表头真的是：月份、型号、问题类型、数量";
                         document.getElementById('uploadStatus').style.color = "#e74c3c";
                     }
-
                 } catch (err) {
                     document.getElementById('uploadStatus').innerText = "❌ 解析出错：" + err.message;
                 }
@@ -171,56 +178,52 @@
             lineChart.update();
         }
 
+        function clearData() { allRecords = []; renderCharts(); document.getElementById('uploadStatus').innerText = "🗑️ 面板数据已清空"; }
+
+        // === 2. 专属智能邮件生成部分 ===
         function generateEmail() {
             const nameInput = document.getElementById('customerName').value.trim();
             const name = nameInput ? nameInput : "there";
-            const model = document.getElementById('emailModel') ? document.getElementById('emailModel').value : "your dash cam";
+            const model = document.getElementById('emailModel').value;
             const issue = document.getElementById('emailIssue').value;
             
-            let body = `Hi ${name},\n\nThank you for reaching out to us. I'm so sorry for the inconvenience you've experienced with ${model}. That's definitely not the experience we want for you.\n\n`;
+            let body = `Hello ${name},\n\nThank you for contacting us. I'm so sorry for the inconvenience you've experienced with ${model}. That's definitely not the experience we want for you.\n\n`;
             
             if (issue === 'hardware') {
-                // 结合语料 47、87、4：引导拔卡测电，不行直接要地址补发
                 body += `Based on your description, this seems to be a hardware or power issue. Could you please try removing the SD card and powering the cam at home with a mobile phone charger (5V/2A) to see if it turns on normally?\n\n`;
                 body += `If it still doesn't work, don't worry. We'd love to make this right. Please provide your delivery address (with postal code) and your recipient's name. We will send you a brand-new replacement unit ASAP!\n\n`;
             } 
             else if (issue === 'sdcard') {
-                // 结合语料 36、51：解释循环录制，教格式化，不行补发卡
                 body += `Dash cams constantly write and rewrite data, so SD card errors can happen over time. First, please find the "format" option in the dash cam system settings and format the memory card.\n\n`;
                 body += `If it still prompts an error after formatting, the card might be worn out. If you are using the memory card we provided, please share your delivery address (with postal code) and we will gladly send a new SD card to you ASAP.\n\n`;
             } 
             else if (issue === 'software') {
-                // 结合语料 228、219：终极 WiFi 解决大法（关流量和VPN）
                 body += `Please don't worry, connection issues are often a common conflict with phone system settings, not a defect of the dash cam.\n\n`;
                 body += `Could you please try the following steps to fix it:\n`;
                 body += `1. Crucial Step: Temporarily turn OFF your phone's Cellular Data and VPN.\n`;
-                body += `2. Go to your Wi-Fi settings, find the dash cam's network, tap to "Forget This Network/Device".\n`;
+                body += `2. Go to your Wi-Fi settings, find the dash cam's network, tap to "Forget This Network".\n`;
                 body += `3. Restart the dash cam and re-connect to the Wi-Fi.\n\n`;
                 body += `If it's still acting up, please let me know your phone model and iOS/Android version. I'll check with our tech team for a firmware update!\n\n`;
             } 
             else if (issue === 'accessory') {
-                // 结合语料 4、102：要损坏件照片+要地址直接发
                 body += `This is an easy fix! We can absolutely send you a replacement part for that.\n\n`;
                 body += `Could you please send us a quick photo of the damaged/missing part so we can make sure we send the exact correct accessory? \n\n`;
                 body += `Also, please provide your delivery address (including postal code and recipient's name), and we will ship the new accessory to you ASAP.\n\n`;
             }
 
-            body += `If there is any further issue, please contact us without a doubt.\n\n`;
-            body += `Looking forward to hearing back from you.\n`;
+            body += `If there is any further issue of the cam, please contact us without a doubt.\n\n`;
+            body += `Looking forward to you!\n`;
             body += `Best wishes,\nCustomer Support Team`;
             
             document.getElementById('emailOutput').value = body;
-        }
         }
 
         function copyEmail() {
             const t = document.getElementById('emailOutput'); t.select(); document.execCommand("copy");
             const btn = document.querySelector('button[onclick="copyEmail()"]');
             btn.innerText = "✅ 复制成功"; btn.style.backgroundColor = "#27ae60";
-            setTimeout(() => { btn.innerText = "📋 一键复制"; }, 2000);
+            setTimeout(() => { btn.innerText = "📋 一键复制"; btn.style.backgroundColor = "#27ae60"; }, 2000);
         }
-
-        function clearData() { allRecords = []; renderCharts(); document.getElementById('uploadStatus').innerText = "🗑️ 面板数据已清空"; }
     </script>
 </body>
 </html>
