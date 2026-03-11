@@ -13,8 +13,8 @@
         .card { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; width: calc(50% - 30px); min-width: 400px; box-sizing: border-box; position: relative; }
         .full-width { width: 100%; }
         .input-section { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap;}
-        input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        button { background-color: #3498db; color: white; border: none; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        input, select, button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { background-color: #3498db; color: white; border: none; cursor: pointer; transition: 0.3s; font-weight: bold; padding: 10px 15px;}
         button:hover { background-color: #2980b9; }
         .export-btn { background-color: #27ae60; margin-top: 15px; width: 100%; }
         .export-btn:hover { background-color: #2ecc71; }
@@ -24,17 +24,23 @@
 <body>
 
     <div class="header">
-        <h1>行车记录仪数据分析面板 (多型号对比版)</h1>
-        <p>精准定位多变体 Listing 的核心缺陷，优化供应链与运营策略</p>
+        <h1>行车记录仪 VOC 数据可视化面板 (Pro 版)</h1>
+        <p>精准追踪 SKU 缺陷表现，赋能全生命周期产品运营</p>
     </div>
 
     <div class="input-section">
-        <strong>录入新反馈数据：</strong>
+        <strong>新增数据：</strong>
         
         <select id="modelType">
-            <option value="四录">四录</option>
-            <option value="双录">双录</option>
-            <option value="三录">三录</option>
+            <option value="N5">N5</option>
+            <option value="N5 PRO">N5 PRO</option>
+            <option value="N6">N6</option>
+            <option value="N7">N7</option>
+            <option value="IK7">IK7</option>
+            <option value="IK9">IK9</option>
+            <option value="IK11">IK11</option>
+            <option value="Q5">Q5</option>
+            <option value="Q7">Q7</option>
         </select>
 
         <select id="issueType">
@@ -43,29 +49,37 @@
             <option value="内存卡报错">内存卡报错</option>
             <option value="支架不稳">支架不稳</option>
             <option value="漏秒/未录制">漏秒/未录制</option>
+            <option value="后拉黑屏">后拉黑屏</option>
+            <option value="时间重置">时间重置</option>
+            <option value="接口松动">接口松动</option>
+            <option value="车充不亮灯">车充不亮灯</option>
+            <option value="配件丢失">配件丢失</option>
+            <option value="接降压线异常">接降压线异常</option>
+            <option value="carplay模式用不了">carplay模式用不了</option>
+            <option value="通电黑屏">通电黑屏</option>
         </select>
         
-        <input type="number" id="issueCount" placeholder="数量" min="1" value="1" style="width: 80px;">
-        <button onclick="addData()">添加到柱状图并更新</button>
+        <input type="number" id="issueCount" placeholder="数量" min="1" value="1" style="width: 70px;">
+        <button onclick="addData()">录入系统</button>
     </div>
 
     <div class="container">
         <div class="card full-width">
-            <h3>各型号客诉问题对比分析 (分组柱状图)</h3>
+            <h3>多型号 SKU 客诉矩阵对比 (柱状图)</h3>
             <canvas id="barChart"></canvas>
-            <button class="export-btn" onclick="downloadChart('barChart', '各型号问题对比-柱状图')" style="width: auto; padding: 10px 30px; display: block; margin: 15px auto 0;">💾 导出分组柱状图为图片</button>
+            <button class="export-btn" onclick="downloadChart('barChart', '全系型号客诉矩阵图')" style="width: auto; padding: 10px 30px; display: block; margin: 15px auto 0;">💾 导出矩阵柱状图</button>
         </div>
 
         <div class="card">
-            <h3>核心差评原因占比 (整体)</h3>
+            <h3>核心差评原因归类占比</h3>
             <canvas id="pieChart"></canvas>
-            <button class="export-btn" onclick="downloadChart('pieChart', '差评原因占比-扇形图')">💾 导出扇形图为图片</button>
+            <button class="export-btn" onclick="downloadChart('pieChart', '差评原因归类')">💾 导出扇形图</button>
         </div>
 
         <div class="card">
-            <h3>月度客诉与差评趋势 (整体)</h3>
+            <h3>整体客诉发展趋势</h3>
             <canvas id="lineChart"></canvas>
-            <button class="export-btn" onclick="downloadChart('lineChart', '月度客诉趋势-曲线图')">💾 导出曲线图为图片</button>
+            <button class="export-btn" onclick="downloadChart('lineChart', '客诉趋势分析')">💾 导出趋势图</button>
         </div>
     </div>
 
@@ -82,34 +96,53 @@
             }
         };
 
-        // --- 初始化数据 ---
-        const barLabels = ['死机/重启', '夜视模糊', '内存卡报错', '支架不稳', '漏秒/未录制'];
+        // --- 1. 定义横坐标：13种问题 ---
+        const barLabels = [
+            '死机/重启', '夜视模糊', '内存卡报错', '支架不稳', '漏秒/未录制', 
+            '后拉黑屏', '时间重置', '接口松动', '车充不亮灯', '配件丢失', 
+            '接降压线异常', 'carplay模式用不了', '通电黑屏'
+        ];
         
-        // 升级：为三个不同型号分别设置初始数据
-        const dataModelA = [20, 5, 25, 10, 5];  // 四录
-        const dataModelB = [15, 2, 10, 2, 8];   // 双录
-        const dataModelC = [5, 18, 5, 1, 2];    // 三录
+        // --- 2. 模拟9个型号的初始基准数据（为展示效果设置的假数据，录入真实数据后可动态叠加） ---
+        const d_N5 = [12, 3, 15, 2, 5, 8, 4, 1, 0, 2, 3, 0, 5];
+        const d_N5PRO = [8, 1, 10, 1, 2, 4, 2, 0, 1, 1, 5, 0, 2];
+        const d_N6 = [5, 4, 8, 0, 3, 6, 1, 2, 0, 0, 2, 1, 3];
+        const d_N7 = [2, 2, 5, 1, 1, 2, 0, 1, 2, 3, 1, 5, 1];
+        const d_IK7 = [15, 8, 20, 5, 8, 12, 5, 3, 1, 2, 4, 0, 6];
+        const d_IK9 = [6, 2, 12, 2, 4, 5, 2, 1, 0, 1, 2, 8, 2];
+        const d_IK11 = [3, 1, 6, 0, 1, 3, 1, 0, 0, 0, 1, 15, 1];
+        const d_Q5 = [10, 5, 18, 4, 6, 10, 8, 4, 2, 1, 3, 0, 4];
+        const d_Q7 = [4, 1, 8, 1, 2, 3, 1, 1, 0, 0, 1, 1, 1];
 
-        const pieLabels = ['硬件故障', '画质不符', '配件劣质', '软件Bug'];
-        const pieData = [40, 25, 15, 20];
-
+        // --- 3. 配置扇形图和曲线图数据 ---
+        const pieLabels = ['核心硬件故障', '固件与软件Bug', '配件及组装', '画质与功能表现'];
+        const pieData = [45, 25, 20, 10];
         const lineLabels = ['1月', '2月', '3月', '4月', '5月', '6月'];
-        const lineDataSeries = [120, 105, 90, 110, 85, 70]; 
+        const lineDataSeries = [280, 250, 210, 230, 190, 150]; 
 
-        // --- 渲染图表 ---
+        // --- 4. 渲染图表 ---
         const ctxBar = document.getElementById('barChart').getContext('2d');
         const barChart = new Chart(ctxBar, {
             type: 'bar',
             data: {
                 labels: barLabels,
-                // 升级：引入三个数据集
                 datasets: [
-                    { label: '四录', data: dataModelA, backgroundColor: '#3498db' },
-                    { label: '双录', data: dataModelB, backgroundColor: '#2ecc71' },
-                    { label: '三录', data: dataModelC, backgroundColor: '#9b59b6' }
+                    { label: 'N5', data: d_N5, backgroundColor: '#3498db' },
+                    { label: 'N5 PRO', data: d_N5PRO, backgroundColor: '#2ecc71' },
+                    { label: 'N6', data: d_N6, backgroundColor: '#9b59b6' },
+                    { label: 'N7', data: d_N7, backgroundColor: '#f1c40f' },
+                    { label: 'IK7', data: d_IK7, backgroundColor: '#e67e22' },
+                    { label: 'IK9', data: d_IK9, backgroundColor: '#e74c3c' },
+                    { label: 'IK11', data: d_IK11, backgroundColor: '#1abc9c' },
+                    { label: 'Q5', data: d_Q5, backgroundColor: '#34495e' },
+                    { label: 'Q7', data: d_Q7, backgroundColor: '#95a5a6' }
                 ]
             },
-            options: { scales: { y: { beginAtZero: true } } },
+            options: { 
+                scales: { y: { beginAtZero: true } },
+                responsive: true,
+                plugins: { legend: { position: 'top' } }
+            },
             plugins: [customCanvasBackgroundColor]
         });
 
@@ -123,12 +156,12 @@
         const ctxLine = document.getElementById('lineChart').getContext('2d');
         const lineChart = new Chart(ctxLine, {
             type: 'line',
-            data: { labels: lineLabels, datasets: [{ label: '每月差评及客诉总数', data: lineDataSeries, fill: false, borderColor: '#e74c3c', tension: 0.1, pointBackgroundColor: '#c0392b' }] },
+            data: { labels: lineLabels, datasets: [{ label: '近6个月全系型号客诉总数', data: lineDataSeries, fill: false, borderColor: '#3498db', tension: 0.1, pointBackgroundColor: '#2980b9' }] },
             options: { scales: { y: { beginAtZero: true } } },
             plugins: [customCanvasBackgroundColor]
         });
 
-        // --- 交互逻辑：添加新数据 (匹配型号) ---
+        // --- 5. 交互逻辑：动态录入数据 ---
         function addData() {
             const model = document.getElementById('modelType').value;
             const type = document.getElementById('issueType').value;
@@ -139,20 +172,18 @@
                 return;
             }
 
-            // 1. 找到问题类型对应的索引
             const typeIndex = barChart.data.labels.indexOf(type);
-            // 2. 精准定位到对应的型号数据集
             const dataset = barChart.data.datasets.find(ds => ds.label === model);
 
             if (typeIndex !== -1 && dataset) {
-                dataset.data[typeIndex] += count; // 仅在该型号的该问题上增加数据
+                dataset.data[typeIndex] += count; 
                 barChart.update(); 
                 
                 const btn = document.querySelector('.input-section button');
-                btn.innerText = "数据已存入图表！";
+                btn.innerText = "录入成功！图表已更新";
                 btn.style.backgroundColor = "#2ecc71";
                 setTimeout(() => {
-                    btn.innerText = "添加到柱状图并更新";
+                    btn.innerText = "录入系统";
                     btn.style.backgroundColor = "#3498db";
                     document.getElementById('issueCount').value = 1;
                 }, 1500);
