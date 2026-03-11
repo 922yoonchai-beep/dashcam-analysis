@@ -24,12 +24,19 @@
 <body>
 
     <div class="header">
-        <h1>行车记录仪数据分析面板</h1>
-        <p>监控产品缺陷趋势，优化运营策略，降低差评率</p>
+        <h1>行车记录仪数据分析面板 (多型号对比版)</h1>
+        <p>精准定位多变体 Listing 的核心缺陷，优化供应链与运营策略</p>
     </div>
 
     <div class="input-section">
         <strong>录入新反馈数据：</strong>
+        
+        <select id="modelType">
+            <option value="四录">四录</option>
+            <option value="双录">双录</option>
+            <option value="三录">三录</option>
+        </select>
+
         <select id="issueType">
             <option value="死机/重启">死机/重启</option>
             <option value="夜视模糊">夜视模糊</option>
@@ -37,32 +44,32 @@
             <option value="支架不稳">支架不稳</option>
             <option value="漏秒/未录制">漏秒/未录制</option>
         </select>
-        <input type="number" id="issueCount" placeholder="输入新增问题数量" min="1" value="1">
+        
+        <input type="number" id="issueCount" placeholder="数量" min="1" value="1" style="width: 80px;">
         <button onclick="addData()">添加到柱状图并更新</button>
     </div>
 
     <div class="container">
-        <div class="card">
-            <h3>具体问题反馈频次</h3>
+        <div class="card full-width">
+            <h3>各型号客诉问题对比分析 (分组柱状图)</h3>
             <canvas id="barChart"></canvas>
-            <button class="export-btn" onclick="downloadChart('barChart', '问题反馈频次-柱状图')">💾 导出柱状图为图片</button>
+            <button class="export-btn" onclick="downloadChart('barChart', '各型号问题对比-柱状图')" style="width: auto; padding: 10px 30px; display: block; margin: 15px auto 0;">💾 导出分组柱状图为图片</button>
         </div>
 
         <div class="card">
-            <h3>核心差评原因占比</h3>
+            <h3>核心差评原因占比 (整体)</h3>
             <canvas id="pieChart"></canvas>
             <button class="export-btn" onclick="downloadChart('pieChart', '差评原因占比-扇形图')">💾 导出扇形图为图片</button>
         </div>
 
-        <div class="card full-width">
-            <h3>月度客诉与差评趋势</h3>
+        <div class="card">
+            <h3>月度客诉与差评趋势 (整体)</h3>
             <canvas id="lineChart"></canvas>
-            <button class="export-btn" onclick="downloadChart('lineChart', '月度客诉趋势-曲线图')" style="width: auto; padding: 10px 30px; display: block; margin: 15px auto 0;">💾 导出曲线图为图片</button>
+            <button class="export-btn" onclick="downloadChart('lineChart', '月度客诉趋势-曲线图')">💾 导出曲线图为图片</button>
         </div>
     </div>
 
     <script>
-        // --- 为图表添加纯白背景的插件（防止导出图片透明底变黑） ---
         const customCanvasBackgroundColor = {
             id: 'customCanvasBackgroundColor',
             beforeDraw: (chart, args, options) => {
@@ -77,7 +84,11 @@
 
         // --- 初始化数据 ---
         const barLabels = ['死机/重启', '夜视模糊', '内存卡报错', '支架不稳', '漏秒/未录制'];
-        const barData = [45, 30, 60, 15, 25];
+        
+        // 升级：为三个不同型号分别设置初始数据
+        const dataModelA = [20, 5, 25, 10, 5];  // 四录
+        const dataModelB = [15, 2, 10, 2, 8];   // 双录
+        const dataModelC = [5, 18, 5, 1, 2];    // 三录
 
         const pieLabels = ['硬件故障', '画质不符', '配件劣质', '软件Bug'];
         const pieData = [40, 25, 15, 20];
@@ -91,7 +102,12 @@
             type: 'bar',
             data: {
                 labels: barLabels,
-                datasets: [{ label: '问题反馈数量', data: barData, backgroundColor: 'rgba(52, 152, 219, 0.6)', borderColor: 'rgba(52, 152, 219, 1)', borderWidth: 1 }]
+                // 升级：引入三个数据集
+                datasets: [
+                    { label: '四录', data: dataModelA, backgroundColor: '#3498db' },
+                    { label: '双录', data: dataModelB, backgroundColor: '#2ecc71' },
+                    { label: '三录', data: dataModelC, backgroundColor: '#9b59b6' }
+                ]
             },
             options: { scales: { y: { beginAtZero: true } } },
             plugins: [customCanvasBackgroundColor]
@@ -100,26 +116,21 @@
         const ctxPie = document.getElementById('pieChart').getContext('2d');
         const pieChart = new Chart(ctxPie, {
             type: 'pie',
-            data: {
-                labels: pieLabels,
-                datasets: [{ data: pieData, backgroundColor: ['#e74c3c', '#f1c40f', '#9b59b6', '#2ecc71'] }]
-            },
+            data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: ['#e74c3c', '#f1c40f', '#e67e22', '#34495e'] }] },
             plugins: [customCanvasBackgroundColor]
         });
 
         const ctxLine = document.getElementById('lineChart').getContext('2d');
         const lineChart = new Chart(ctxLine, {
             type: 'line',
-            data: {
-                labels: lineLabels,
-                datasets: [{ label: '每月差评及客诉总数', data: lineDataSeries, fill: false, borderColor: '#e67e22', tension: 0.1, pointBackgroundColor: '#d35400' }]
-            },
+            data: { labels: lineLabels, datasets: [{ label: '每月差评及客诉总数', data: lineDataSeries, fill: false, borderColor: '#e74c3c', tension: 0.1, pointBackgroundColor: '#c0392b' }] },
             options: { scales: { y: { beginAtZero: true } } },
             plugins: [customCanvasBackgroundColor]
         });
 
-        // --- 交互逻辑：添加新数据 ---
+        // --- 交互逻辑：添加新数据 (匹配型号) ---
         function addData() {
+            const model = document.getElementById('modelType').value;
             const type = document.getElementById('issueType').value;
             const count = parseInt(document.getElementById('issueCount').value);
 
@@ -128,13 +139,17 @@
                 return;
             }
 
-            const index = barChart.data.labels.indexOf(type);
-            if (index !== -1) {
-                barChart.data.datasets[0].data[index] += count;
+            // 1. 找到问题类型对应的索引
+            const typeIndex = barChart.data.labels.indexOf(type);
+            // 2. 精准定位到对应的型号数据集
+            const dataset = barChart.data.datasets.find(ds => ds.label === model);
+
+            if (typeIndex !== -1 && dataset) {
+                dataset.data[typeIndex] += count; // 仅在该型号的该问题上增加数据
                 barChart.update(); 
                 
                 const btn = document.querySelector('.input-section button');
-                btn.innerText = "添加成功！";
+                btn.innerText = "数据已存入图表！";
                 btn.style.backgroundColor = "#2ecc71";
                 setTimeout(() => {
                     btn.innerText = "添加到柱状图并更新";
@@ -144,13 +159,9 @@
             }
         }
 
-        // --- 交互逻辑：导出图表为图片 ---
         function downloadChart(canvasId, filename) {
             const canvas = document.getElementById(canvasId);
-            // 生成图片数据链接 (指定为 jpeg 格式确保底色为白，或者用 png 因为我们加了白底插件)
             const imageLink = canvas.toDataURL('image/png', 1.0);
-            
-            // 创建一个隐藏的下载链接并触发点击
             const link = document.createElement('a');
             link.download = filename + '.png';
             link.href = imageLink;
@@ -158,5 +169,4 @@
         }
     </script>
 </body>
-
 </html>
