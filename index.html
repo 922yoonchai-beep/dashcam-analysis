@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>行车记录仪 - 售后与运营数据分析面板</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         .header { text-align: center; margin-bottom: 30px; }
@@ -13,52 +14,48 @@
         .card { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; width: calc(50% - 30px); min-width: 400px; box-sizing: border-box; position: relative; }
         .full-width { width: 100%; }
         .input-section { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap;}
+        .import-section { background: #e8f8f5; border: 2px dashed #1abc9c; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; width: 100%; box-sizing: border-box;}
         input, select, button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         button { background-color: #3498db; color: white; border: none; cursor: pointer; transition: 0.3s; font-weight: bold; padding: 10px 15px;}
         button:hover { background-color: #2980b9; }
         .export-btn { background-color: #27ae60; margin-top: 15px; width: 100%; }
         .export-btn:hover { background-color: #2ecc71; }
+        .file-upload-btn { background-color: #1abc9c; font-size: 16px; padding: 12px 24px;}
+        .file-upload-btn:hover { background-color: #16a085; }
         canvas { max-width: 100%; background-color: white; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>行车记录仪 VOC 数据可视化面板 (Pro 版)</h1>
-        <p>精准追踪 SKU 缺陷表现，赋能全生命周期产品运营</p>
+        <h1>行车记录仪 VOC 数据可视化面板 (全自动分析版)</h1>
+        <p>一键导入售后数据，秒级生成产品缺陷分析矩阵</p>
+    </div>
+
+    <div class="import-section">
+        <h3 style="margin-top: 0; color: #16a085;">📊 批量导入客诉数据</h3>
+        <p style="font-size: 14px; color: #555;">支持直接导入 Excel (.xlsx) 或 CSV 文件，系统将自动汇总并生成图表</p>
+        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleFileUpload(event)">
+        <button class="file-upload-btn" onclick="document.getElementById('excelFile').click()">📂 点击选择 Excel 文件导入</button>
+        <p id="uploadStatus" style="font-size: 14px; color: #e74c3c; margin-bottom: 0; font-weight: bold;"></p>
     </div>
 
     <div class="input-section">
-        <strong>新增数据：</strong>
-        
+        <strong>手动补录数据：</strong>
         <select id="modelType">
-            <option value="N5">N5</option>
-            <option value="N5 PRO">N5 PRO</option>
-            <option value="N6">N6</option>
-            <option value="N7">N7</option>
-            <option value="IK7">IK7</option>
-            <option value="IK9">IK9</option>
-            <option value="IK11">IK11</option>
-            <option value="Q5">Q5</option>
-            <option value="Q7">Q7</option>
+            <option value="N5">N5</option><option value="N5 PRO">N5 PRO</option><option value="N6">N6</option>
+            <option value="N7">N7</option><option value="IK7">IK7</option><option value="IK9">IK9</option>
+            <option value="IK11">IK11</option><option value="Q5">Q5</option><option value="Q7">Q7</option>
         </select>
-
         <select id="issueType">
-            <option value="死机/重启">死机/重启</option>
-            <option value="夜视模糊">夜视模糊</option>
-            <option value="内存卡报错">内存卡报错</option>
-            <option value="支架不稳">支架不稳</option>
-            <option value="漏秒/未录制">漏秒/未录制</option>
-            <option value="后拉黑屏">后拉黑屏</option>
-            <option value="时间重置">时间重置</option>
-            <option value="接口松动">接口松动</option>
-            <option value="车充不亮灯">车充不亮灯</option>
-            <option value="配件丢失">配件丢失</option>
-            <option value="接降压线异常">接降压线异常</option>
-            <option value="carplay模式用不了">carplay模式用不了</option>
+            <option value="死机/重启">死机/重启</option><option value="夜视模糊">夜视模糊</option>
+            <option value="内存卡报错">内存卡报错</option><option value="支架不稳">支架不稳</option>
+            <option value="漏秒/未录制">漏秒/未录制</option><option value="后拉黑屏">后拉黑屏</option>
+            <option value="时间重置">时间重置</option><option value="接口松动">接口松动</option>
+            <option value="车充不亮灯">车充不亮灯</option><option value="配件丢失">配件丢失</option>
+            <option value="接降压线异常">接降压线异常</option><option value="carplay模式用不了">carplay模式用不了</option>
             <option value="通电黑屏">通电黑屏</option>
         </select>
-        
         <input type="number" id="issueCount" placeholder="数量" min="1" value="1" style="width: 70px;">
         <button onclick="addData()">录入系统</button>
     </div>
@@ -69,108 +66,119 @@
             <canvas id="barChart"></canvas>
             <button class="export-btn" onclick="downloadChart('barChart', '全系型号客诉矩阵图')" style="width: auto; padding: 10px 30px; display: block; margin: 15px auto 0;">💾 导出矩阵柱状图</button>
         </div>
-
         <div class="card">
             <h3>核心差评原因归类占比</h3>
             <canvas id="pieChart"></canvas>
-            <button class="export-btn" onclick="downloadChart('pieChart', '差评原因归类')">💾 导出扇形图</button>
         </div>
-
         <div class="card">
             <h3>整体客诉发展趋势</h3>
             <canvas id="lineChart"></canvas>
-            <button class="export-btn" onclick="downloadChart('lineChart', '客诉趋势分析')">💾 导出趋势图</button>
         </div>
     </div>
 
     <script>
+        // 白底插件
         const customCanvasBackgroundColor = {
             id: 'customCanvasBackgroundColor',
             beforeDraw: (chart, args, options) => {
                 const {ctx} = chart;
-                ctx.save();
-                ctx.globalCompositeOperation = 'destination-over';
-                ctx.fillStyle = options.color || '#ffffff';
-                ctx.fillRect(0, 0, chart.width, chart.height);
-                ctx.restore();
+                ctx.save(); ctx.globalCompositeOperation = 'destination-over'; ctx.fillStyle = options.color || '#ffffff'; ctx.fillRect(0, 0, chart.width, chart.height); ctx.restore();
             }
         };
 
-        // --- 1. 定义横坐标：13种问题 ---
-        const barLabels = [
-            '死机/重启', '夜视模糊', '内存卡报错', '支架不稳', '漏秒/未录制', 
-            '后拉黑屏', '时间重置', '接口松动', '车充不亮灯', '配件丢失', 
-            '接降压线异常', 'carplay模式用不了', '通电黑屏'
-        ];
+        const barLabels = ['死机/重启', '夜视模糊', '内存卡报错', '支架不稳', '漏秒/未录制', '后拉黑屏', '时间重置', '接口松动', '车充不亮灯', '配件丢失', '接降压线异常', 'carplay模式用不了', '通电黑屏'];
         
-        // --- 2. 模拟9个型号的初始基准数据（为展示效果设置的假数据，录入真实数据后可动态叠加） ---
-        const d_N5 = [12, 3, 15, 2, 5, 8, 4, 1, 0, 2, 3, 0, 5];
-        const d_N5PRO = [8, 1, 10, 1, 2, 4, 2, 0, 1, 1, 5, 0, 2];
-        const d_N6 = [5, 4, 8, 0, 3, 6, 1, 2, 0, 0, 2, 1, 3];
-        const d_N7 = [2, 2, 5, 1, 1, 2, 0, 1, 2, 3, 1, 5, 1];
-        const d_IK7 = [15, 8, 20, 5, 8, 12, 5, 3, 1, 2, 4, 0, 6];
-        const d_IK9 = [6, 2, 12, 2, 4, 5, 2, 1, 0, 1, 2, 8, 2];
-        const d_IK11 = [3, 1, 6, 0, 1, 3, 1, 0, 0, 0, 1, 15, 1];
-        const d_Q5 = [10, 5, 18, 4, 6, 10, 8, 4, 2, 1, 3, 0, 4];
-        const d_Q7 = [4, 1, 8, 1, 2, 3, 1, 1, 0, 0, 1, 1, 1];
-
-        // --- 3. 配置扇形图和曲线图数据 ---
-        const pieLabels = ['核心硬件故障', '固件与软件Bug', '配件及组装', '画质与功能表现'];
-        const pieData = [45, 25, 20, 10];
-        const lineLabels = ['1月', '2月', '3月', '4月', '5月', '6月'];
-        const lineDataSeries = [280, 250, 210, 230, 190, 150]; 
-
-        // --- 4. 渲染图表 ---
+        // 初始数据清零，等待 Excel 导入
+        const createEmptyArray = () => new Array(13).fill(0);
+        
         const ctxBar = document.getElementById('barChart').getContext('2d');
         const barChart = new Chart(ctxBar, {
             type: 'bar',
             data: {
                 labels: barLabels,
                 datasets: [
-                    { label: 'N5', data: d_N5, backgroundColor: '#3498db' },
-                    { label: 'N5 PRO', data: d_N5PRO, backgroundColor: '#2ecc71' },
-                    { label: 'N6', data: d_N6, backgroundColor: '#9b59b6' },
-                    { label: 'N7', data: d_N7, backgroundColor: '#f1c40f' },
-                    { label: 'IK7', data: d_IK7, backgroundColor: '#e67e22' },
-                    { label: 'IK9', data: d_IK9, backgroundColor: '#e74c3c' },
-                    { label: 'IK11', data: d_IK11, backgroundColor: '#1abc9c' },
-                    { label: 'Q5', data: d_Q5, backgroundColor: '#34495e' },
-                    { label: 'Q7', data: d_Q7, backgroundColor: '#95a5a6' }
+                    { label: 'N5', data: createEmptyArray(), backgroundColor: '#3498db' },
+                    { label: 'N5 PRO', data: createEmptyArray(), backgroundColor: '#2ecc71' },
+                    { label: 'N6', data: createEmptyArray(), backgroundColor: '#9b59b6' },
+                    { label: 'N7', data: createEmptyArray(), backgroundColor: '#f1c40f' },
+                    { label: 'IK7', data: createEmptyArray(), backgroundColor: '#e67e22' },
+                    { label: 'IK9', data: createEmptyArray(), backgroundColor: '#e74c3c' },
+                    { label: 'IK11', data: createEmptyArray(), backgroundColor: '#1abc9c' },
+                    { label: 'Q5', data: createEmptyArray(), backgroundColor: '#34495e' },
+                    { label: 'Q7', data: createEmptyArray(), backgroundColor: '#95a5a6' }
                 ]
             },
-            options: { 
-                scales: { y: { beginAtZero: true } },
-                responsive: true,
-                plugins: { legend: { position: 'top' } }
-            },
+            options: { scales: { y: { beginAtZero: true } }, responsive: true, plugins: { legend: { position: 'top' } } },
             plugins: [customCanvasBackgroundColor]
         });
 
-        const ctxPie = document.getElementById('pieChart').getContext('2d');
-        const pieChart = new Chart(ctxPie, {
-            type: 'pie',
-            data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: ['#e74c3c', '#f1c40f', '#e67e22', '#34495e'] }] },
-            plugins: [customCanvasBackgroundColor]
-        });
+        // 静态渲染扇形图和折线图
+        new Chart(document.getElementById('pieChart').getContext('2d'), { type: 'pie', data: { labels: ['核心硬件故障', '固件与软件Bug', '配件及组装', '画质与功能表现'], datasets: [{ data: [45, 25, 20, 10], backgroundColor: ['#e74c3c', '#f1c40f', '#e67e22', '#34495e'] }] }, plugins: [customCanvasBackgroundColor] });
+        new Chart(document.getElementById('lineChart').getContext('2d'), { type: 'line', data: { labels: ['1月', '2月', '3月', '4月', '5月', '6月'], datasets: [{ label: '近6个月全系型号客诉总数', data: [280, 250, 210, 230, 190, 150], fill: false, borderColor: '#3498db', tension: 0.1 }] }, plugins: [customCanvasBackgroundColor] });
 
-        const ctxLine = document.getElementById('lineChart').getContext('2d');
-        const lineChart = new Chart(ctxLine, {
-            type: 'line',
-            data: { labels: lineLabels, datasets: [{ label: '近6个月全系型号客诉总数', data: lineDataSeries, fill: false, borderColor: '#3498db', tension: 0.1, pointBackgroundColor: '#2980b9' }] },
-            options: { scales: { y: { beginAtZero: true } } },
-            plugins: [customCanvasBackgroundColor]
-        });
+        // --- 核心功能：处理 Excel 文件解析 ---
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        // --- 5. 交互逻辑：动态录入数据 ---
+            const reader = new FileReader();
+            const statusText = document.getElementById('uploadStatus');
+            statusText.innerText = "正在拼命解析数据中...";
+            statusText.style.color = "#f39c12";
+
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // 将表格转化为 JSON 数组
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    let successCount = 0;
+
+                    // 遍历每一行数据
+                    jsonData.forEach(row => {
+                        // 假设 Excel 的表头分别是 "型号" 和 "问题类型"，"数量"可选（默认是1）
+                        const model = row['型号'] ? row['型号'].toString().trim() : null;
+                        const issue = row['问题类型'] ? row['问题类型'].toString().trim() : null;
+                        const count = row['数量'] ? parseInt(row['数量']) : 1;
+
+                        if (model && issue) {
+                            const typeIndex = barChart.data.labels.indexOf(issue);
+                            const dataset = barChart.data.datasets.find(ds => ds.label === model);
+
+                            if (typeIndex !== -1 && dataset) {
+                                dataset.data[typeIndex] += count;
+                                successCount++;
+                            }
+                        }
+                    });
+
+                    barChart.update();
+                    statusText.innerText = `✅ 解析成功！已成功载入 ${successCount} 条有效客诉记录。`;
+                    statusText.style.color = "#27ae60";
+
+                } catch (error) {
+                    statusText.innerText = "❌ 解析失败，请检查 Excel 格式是否正确！";
+                    statusText.style.color = "#e74c3c";
+                    console.error(error);
+                }
+                
+                // 清空 input 允许重复上传相同文件
+                event.target.value = ''; 
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 手动录入功能
         function addData() {
             const model = document.getElementById('modelType').value;
             const type = document.getElementById('issueType').value;
             const count = parseInt(document.getElementById('issueCount').value);
-
-            if (!count || count <= 0) {
-                alert("请输入有效的数量！");
-                return;
-            }
+            if (!count || count <= 0) return alert("请输入有效的数量！");
 
             const typeIndex = barChart.data.labels.indexOf(type);
             const dataset = barChart.data.datasets.find(ds => ds.label === model);
@@ -178,24 +186,17 @@
             if (typeIndex !== -1 && dataset) {
                 dataset.data[typeIndex] += count; 
                 barChart.update(); 
-                
                 const btn = document.querySelector('.input-section button');
-                btn.innerText = "录入成功！图表已更新";
+                btn.innerText = "录入成功！";
                 btn.style.backgroundColor = "#2ecc71";
-                setTimeout(() => {
-                    btn.innerText = "录入系统";
-                    btn.style.backgroundColor = "#3498db";
-                    document.getElementById('issueCount').value = 1;
-                }, 1500);
+                setTimeout(() => { btn.innerText = "录入系统"; btn.style.backgroundColor = "#3498db"; document.getElementById('issueCount').value = 1; }, 1000);
             }
         }
 
         function downloadChart(canvasId, filename) {
-            const canvas = document.getElementById(canvasId);
-            const imageLink = canvas.toDataURL('image/png', 1.0);
             const link = document.createElement('a');
             link.download = filename + '.png';
-            link.href = imageLink;
+            link.href = document.getElementById(canvasId).toDataURL('image/png', 1.0);
             link.click();
         }
     </script>
