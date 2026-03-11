@@ -1,4 +1,177 @@
-function generateEmail() {
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行车记录仪 - VOC 智能中台</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { color: #2c3e50; margin-bottom: 5px;}
+        .container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; width: calc(50% - 30px); min-width: 400px; box-sizing: border-box; }
+        .full-width { width: 100%; }
+        .section { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap;}
+        .import-section { background: #e8f8f5; border: 2px dashed #1abc9c; flex-direction: column; }
+        .email-section { background: #ebf5fb; border: 2px solid #3498db; flex-direction: column; align-items: flex-start;}
+        input, select, button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { background-color: #3498db; color: white; border: none; cursor: pointer; transition: 0.3s; font-weight: bold; padding: 10px 15px;}
+        button:hover { background-color: #2980b9; }
+        .export-btn { background-color: #27ae60; margin-top: 15px; width: auto; }
+        .action-btn { background-color: #e67e22; font-size: 16px; padding: 10px 20px; margin-left: 10px;}
+        textarea { width: 100%; height: 130px; padding: 10px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 14px; margin-top: 10px;}
+        canvas { max-width: 100%; background-color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>行车记录仪 VOC 智能分析与客服中台</h1>
+        <p>动态数据大屏 | 自动防呆纠错 | 智能邮件生成</p>
+    </div>
+
+    <div class="section import-section">
+        <h3 style="margin: 0; color: #16a085;">📊 导入 Excel 售后数据</h3>
+        <div>
+            <input type="file" id="excelFile" accept=".xlsx, .xls" style="display: none;" onchange="handleFileUpload(event)">
+            <button class="export-btn" style="margin-top:0;" onclick="document.getElementById('excelFile').click()">📂 点击选择 .xlsx 文件导入</button>
+            <button class="export-btn" style="background-color:#95a5a6; margin-top:0; margin-left:10px;" onclick="clearData()">🗑️ 清空面板</button>
+        </div>
+        <p id="uploadStatus" style="font-size: 14px; color: #e74c3c; margin-bottom: 0; font-weight: bold;"></p>
+        
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc; width: 100%; text-align: center;">
+            <strong>📅 筛选显示月份：</strong>
+            <select id="monthFilter" onchange="renderCharts()">
+                <option value="全部">🔍 全年累计数据</option>
+                <option value="1月">1月</option><option value="2月">2月</option><option value="3月">3月</option><option value="4月">4月</option><option value="5月">5月</option><option value="6月">6月</option>
+                <option value="7月">7月</option><option value="8月">8月</option><option value="9月">9月</option><option value="10月">10月</option><option value="11月">11月</option><option value="12月">12月</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="section email-section">
+        <h3 style="margin: 0 0 10px 0; color: #2980b9;">📧 智能英文邮件生成</h3>
+        <div style="display: flex; gap: 10px; width: 100%;">
+            <input type="text" id="customerName" placeholder="客户姓名 (选填)">
+            <select id="emailIssue">
+                <option value="hardware">硬件故障(死机/黑屏)</option>
+                <option value="sdcard">内存卡报错(提示格式化)</option>
+                <option value="software">软件/WiFi/漏秒问题</option>
+                <option value="accessory">配件损坏/丢失</option>
+            </select>
+            <button onclick="generateEmail()" style="background-color: #e67e22;">✨ 生成回复</button>
+            <button onclick="copyEmail()" style="background-color: #27ae60; margin-left: auto;">📋 一键复制</button>
+        </div>
+        <textarea id="emailOutput" placeholder="生成的邮件将在这里预览..."></textarea>
+    </div>
+
+    <div class="container">
+        <div class="card full-width"><canvas id="barChart"></canvas></div>
+        <div class="card"><canvas id="pieChart"></canvas></div>
+        <div class="card"><canvas id="lineChart"></canvas></div>
+    </div>
+
+    <script>
+        let allRecords = [];
+        const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+        const colors = ['#3498db','#2ecc71','#e74c3c','#f1c40f','#9b59b6','#e67e22','#1abc9c','#34495e','#95a5a6','#d35400'];
+
+        const bg = { id: 'bg', beforeDraw: (c) => { const ctx = c.ctx; ctx.save(); ctx.fillStyle = '#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.restore(); } };
+
+        let barChart = new Chart(document.getElementById('barChart').getContext('2d'), { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true }, plugins: [bg] });
+        let pieChart = new Chart(document.getElementById('pieChart').getContext('2d'), { type: 'pie', data: { labels: ['硬件故障', '固件软件', '配件组装', '画质体验'], datasets: [{ data: [0,0,0,0], backgroundColor: ['#e74c3c', '#f1c40f', '#e67e22', '#3498db'] }] }, plugins: [bg] });
+        let lineChart = new Chart(document.getElementById('lineChart').getContext('2d'), { type: 'line', data: { labels: months, datasets: [{ label: '全系客诉总趋势', data: Array(12).fill(0), borderColor: '#3498db' }] }, plugins: [bg] });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            document.getElementById('uploadStatus').innerText = "⏳ 正在智能清洗并解析数据...";
+            document.getElementById('uploadStatus').style.color = "#f39c12";
+
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                    
+                    allRecords = []; 
+                    let successCount = 0;
+
+                    jsonData.forEach(row => {
+                        // 🌟 核心杀手锏：自动把表头里所有的空格、换行符全部抹杀！
+                        let cleanRow = {};
+                        for (let key in row) {
+                            if(key) {
+                                let cleanKey = key.replace(/[\\s\\uFEFF\\xA0]+/g, ''); // 剔除所有隐形空格
+                                cleanRow[cleanKey] = row[key];
+                            }
+                        }
+
+                        let m = cleanRow['月份'] ? cleanRow['月份'].toString().trim() : '2月';
+                        if (!m.endsWith('月')) m += '月';
+                        
+                        const model = cleanRow['型号'] ? cleanRow['型号'].toString().trim().toUpperCase() : null;
+                        const issue = cleanRow['问题类型'] ? cleanRow['问题类型'].toString().trim() : null;
+                        const count = cleanRow['数量'] ? parseInt(cleanRow['数量']) : 1;
+
+                        if (model && issue) {
+                            allRecords.push({ month: m, model, issue, count });
+                            successCount++;
+                        }
+                    });
+
+                    renderCharts();
+                    
+                    if(successCount > 0) {
+                        document.getElementById('uploadStatus').innerText = "✅ 奇迹发生！成功过滤隐形空格，导入 " + successCount + " 条数据！";
+                        document.getElementById('uploadStatus').style.color = "#27ae60";
+                    } else {
+                        document.getElementById('uploadStatus').innerText = "❌ 未找到数据。请确认 Excel 表头真的是：月份、型号、问题类型、数量";
+                        document.getElementById('uploadStatus').style.color = "#e74c3c";
+                    }
+
+                } catch (err) {
+                    document.getElementById('uploadStatus').innerText = "❌ 解析出错：" + err.message;
+                }
+                event.target.value = ''; 
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderCharts() {
+            const sel = document.getElementById('monthFilter').value;
+            const data = sel === '全部' ? allRecords : allRecords.filter(r => r.month === sel);
+            const issues = [...new Set(data.map(r => r.issue))];
+            const models = [...new Set(data.map(r => r.model))];
+
+            barChart.data.labels = issues;
+            barChart.data.datasets = models.map((m, i) => ({
+                label: m,
+                backgroundColor: colors[i % colors.length],
+                data: issues.map(iss => data.filter(r => r.model === m && r.issue === iss).reduce((s, r) => s + r.count, 0))
+            }));
+            barChart.update();
+
+            const pData = [0,0,0,0];
+            data.forEach(r => {
+                if(r.issue.includes('死机')||r.issue.includes('黑屏')||r.issue.includes('不开机')||r.issue.includes('不亮')) pData[0]+=r.count;
+                else if(r.issue.includes('WiFi')||r.issue.includes('漏秒')||r.issue.includes('模式')||r.issue.includes('GPS')) pData[1]+=r.count;
+                else if(r.issue.includes('支架')||r.issue.includes('配件')||r.issue.includes('线')||r.issue.includes('卡报错')) pData[2]+=r.count;
+                else pData[3]+=r.count;
+            });
+            pieChart.data.datasets[0].data = pData;
+            pieChart.update();
+
+            const lData = Array(12).fill(0);
+            allRecords.forEach(r => { const idx = months.indexOf(r.month); if(idx>-1) lData[idx]+=r.count; });
+            lineChart.data.datasets[0].data = lData;
+            lineChart.update();
+        }
+
+        function generateEmail() {
             const nameInput = document.getElementById('customerName').value.trim();
             const name = nameInput ? nameInput : "there";
             const model = document.getElementById('emailModel') ? document.getElementById('emailModel').value : "your dash cam";
@@ -38,3 +211,16 @@ function generateEmail() {
             
             document.getElementById('emailOutput').value = body;
         }
+        }
+
+        function copyEmail() {
+            const t = document.getElementById('emailOutput'); t.select(); document.execCommand("copy");
+            const btn = document.querySelector('button[onclick="copyEmail()"]');
+            btn.innerText = "✅ 复制成功"; btn.style.backgroundColor = "#27ae60";
+            setTimeout(() => { btn.innerText = "📋 一键复制"; }, 2000);
+        }
+
+        function clearData() { allRecords = []; renderCharts(); document.getElementById('uploadStatus').innerText = "🗑️ 面板数据已清空"; }
+    </script>
+</body>
+</html>
