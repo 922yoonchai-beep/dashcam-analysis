@@ -70,22 +70,51 @@
     </div>
 
     <script>
-        // 🔴 重要：在此处填入你的 APIFY_TOKEN
-        const APIFY_TOKEN = "apify_api_xyvo38EW3IkZR9UZWbuinaZvxMvVyk40ebT1"; 
+    // 1. 【修改点】不再写死 Token，改为从本地存储获取
+    let APIFY_TOKEN = localStorage.getItem('my_apify_token') || "";
 
-        async function runAIEngine() {
-            const vUrl = document.getElementById('videoUrl').value.trim();
-            const pUrl = document.getElementById('prodUrl').value.trim();
-            const btn = document.getElementById('runBtn');
-            const loader = document.getElementById('loader');
-            const box = document.getElementById('outreachBox');
+    // 如果本地没有 Token，则弹窗询问
+    if (!APIFY_TOKEN || APIFY_TOKEN.length < 10) {
+        APIFY_TOKEN = prompt("请输入你的 Apify API Token：");
+        if (APIFY_TOKEN) {
+            localStorage.setItem('my_apify_token', APIFY_TOKEN);
+        }
+    }
 
-            if (!vUrl || !pUrl) { alert("请同时输入视频链接和产品链接！"); return; }
-            if (APIFY_TOKEN.includes("你的")) { alert("请先在代码内填入 APIFY Token！"); return; }
+    async function runAIEngine() {
+        const vUrl = document.getElementById('videoUrl').value.trim();
+        const pUrl = document.getElementById('prodUrl').value.trim();
+        const btn = document.getElementById('runBtn');
+        const loader = document.getElementById('loader');
+        const box = document.getElementById('outreachBox');
 
-            loader.classList.remove('hidden');
-            btn.disabled = true;
-            box.innerText = "";
+        // 2. 【修改点】判断逻辑也要改一下，防止没输入 Token 就运行
+        if (!vUrl || !pUrl) { alert("请同时输入视频链接和产品链接！"); return; }
+        if (!APIFY_TOKEN) { alert("没有 Token 无法运行，请刷新页面输入。"); return; }
+
+        loader.classList.remove('hidden');
+        btn.disabled = true;
+        box.innerText = "";
+
+        // --- 以下 try 内部的逻辑【原封不动保留】 ---
+        try {
+            // 使用同步 API 端点
+            const endpoint = `https://api.apify.com/v2/acts/clockworks~tiktok-scraper/run-sync-get-dataset?token=${APIFY_TOKEN}`;
+            
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    postURLs: [vUrl],
+                    resultsPerPage: 1,
+                    shouldDownloadVideos: false
+                })
+            });
+
+            if (!response.ok) throw new Error("API 请求失败: " + response.status);
+
+            const data = await response.json();
+            // ... 后面的逻辑继续保留 ...
 
             try {
                 // 使用官方推荐的同步 API 端点，URL 参数包含 Token 避开某些 CORS 限制
