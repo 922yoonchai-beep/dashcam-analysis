@@ -2,227 +2,248 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>行车记录仪 - VOC 智能分析与客服中台</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>IIWEY AI 精准开发 & CRM 工作站 (修复版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { color: #2c3e50; margin-bottom: 5px;}
-        .container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-        .card { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; width: calc(50% - 30px); min-width: 400px; box-sizing: border-box; }
-        .full-width { width: 100%; }
-        .section { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap;}
-        .import-section { background: #e8f8f5; border: 2px dashed #1abc9c; flex-direction: column; }
-        .email-section { background: #ebf5fb; border: 2px solid #3498db; flex-direction: column; align-items: flex-start;}
-        input, select, button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        button { background-color: #3498db; color: white; border: none; cursor: pointer; transition: 0.3s; font-weight: bold; padding: 10px 15px;}
-        button:hover { background-color: #2980b9; }
-        .export-btn { background-color: #27ae60; margin-top: 15px; width: auto; }
-        .action-btn { background-color: #e67e22; font-size: 16px; padding: 10px 20px; margin-left: 10px;}
-        textarea { width: 100%; height: 160px; padding: 10px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 14px; margin-top: 10px; font-family: Arial, sans-serif;}
-        canvas { max-width: 100%; background-color: white; }
+        .gradient-text { background: linear-gradient(to right, #2DD4BF, #3B82F6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .error-shake { animation: shake 0.5s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
     </style>
 </head>
-<body>
-
-    <div class="header">
-        <h1>行车记录仪 VOC 智能分析与客服中台</h1>
-        <p>动态数据大屏 | 自动防呆纠错 | 专属智能邮件生成</p>
-    </div>
-
-    <div class="section import-section">
-        <h3 style="margin: 0; color: #16a085;">📊 导入 Excel 售后数据</h3>
-        <div>
-            <input type="file" id="excelFile" accept=".xlsx, .xls" style="display: none;" onchange="handleFileUpload(event)">
-            <button class="export-btn" style="margin-top:0;" onclick="document.getElementById('excelFile').click()">📂 点击选择 .xlsx 文件导入</button>
-            <button class="export-btn" style="background-color:#95a5a6; margin-top:0; margin-left:10px;" onclick="clearData()">🗑️ 清空面板</button>
-        </div>
-        <p id="uploadStatus" style="font-size: 14px; color: #e74c3c; margin-bottom: 0; font-weight: bold;"></p>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen p-4 md:p-8 font-sans" onload="loadHistory()">
+    <div class="max-w-7xl mx-auto space-y-6">
         
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc; width: 100%; text-align: center;">
-            <strong>📅 筛选显示月份：</strong>
-            <select id="monthFilter" onchange="renderCharts()">
-                <option value="全部">🔍 全年累计数据</option>
-                <option value="1月">1月</option><option value="2月">2月</option><option value="3月">3月</option><option value="4月">4月</option><option value="5月">5月</option><option value="6月">6月</option>
-                <option value="7月">7月</option><option value="8月">8月</option><option value="9月">9月</option><option value="10月">10月</option><option value="11月">11月</option><option value="12月">12月</option>
-            </select>
-        </div>
-    </div>
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl shadow-2xl p-6 md:p-8">
+            <header class="mb-8 flex justify-between items-center border-b border-slate-700 pb-4">
+                <div>
+                    <h1 class="text-3xl font-black gradient-text">AI Outreach Hub</h1>
+                    <p class="text-slate-500 text-[10px] uppercase tracking-[0.2em] mt-1">Apify Driven | Semantic Analysis | History Tracking</p>
+                </div>
+                <div id="apiIndicator" class="text-[10px] font-mono text-slate-500 bg-slate-900 px-3 py-1 rounded-full border border-slate-700">API Status: Ready</div>
+            </header>
 
-    <div class="section email-section">
-        <h3 style="margin: 0 0 10px 0; color: #2980b9;">📧 专属智能英文邮件生成</h3>
-        <div style="display: flex; gap: 10px; width: 100%; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="customerName" placeholder="客户姓名(选填)" style="width: 120px;">
-            <select id="emailModel">
-                <option value="your dash cam">选择机型(通用)</option>
-                <option value="N5">N5 / N5 PRO</option>
-                <option value="IK7">IK7 / IK11</option>
-                <option value="D2">D2 / D4</option>
-                <option value="L7">L7</option>
-                <option value="Q7">Q7</option>
-            </select>
-            <select id="emailIssue">
-                <option value="hardware">硬件故障(死机/黑屏/不开机)</option>
-                <option value="sdcard">内存卡报错(提示格式化)</option>
-                <option value="software">软件/WiFi/APP连接问题</option>
-                <option value="accessory">配件损坏/丢失补发</option>
-            </select>
-            <button onclick="generateEmail()" style="background-color: #e67e22;">✨ 生成专属回复</button>
-            <button onclick="copyEmail()" style="background-color: #27ae60;">📋 一键复制</button>
-        </div>
-        <textarea id="emailOutput" placeholder="根据您的专属语料库生成的回复将在这里预览..."></textarea>
-    </div>
+            <div class="grid lg:grid-cols-2 gap-10">
+                <div class="space-y-4">
+                    <div class="space-y-3">
+                        <label class="block text-[10px] font-bold text-teal-400 uppercase tracking-widest">1. 粘贴达人视频链接</label>
+                        <input type="text" id="videoUrl" placeholder="https://www.tiktok.com/@user/video/..." 
+                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal-500 transition-all">
+                        
+                        <label class="block text-[10px] font-bold text-blue-400 uppercase tracking-widest">2. 粘贴 IIWEY 产品链接</label>
+                        <input type="text" id="prodUrl" placeholder="粘贴 Amazon 或 TikTok Shop 产品链接..." 
+                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-all">
+                    </div>
 
-    <div class="container">
-        <div class="card full-width"><canvas id="barChart"></canvas></div>
-        <div class="card"><canvas id="pieChart"></canvas></div>
-        <div class="card"><canvas id="lineChart"></canvas></div>
+                    <button onclick="runAIEngine()" id="runBtn" class="w-full bg-gradient-to-r from-teal-500 to-blue-600 py-4 rounded-2xl font-black text-lg hover:brightness-110 active:scale-95 transition-all shadow-lg disabled:opacity-50">
+                        深度剖析并生成模板 ✨
+                    </button>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 flex flex-col min-h-[400px] relative overflow-hidden">
+                    <div id="loader" class="hidden absolute inset-0 bg-slate-900/95 z-20 flex flex-col items-center justify-center rounded-2xl backdrop-blur-sm">
+                        <div class="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p class="mt-4 text-xs font-bold text-teal-400 animate-pulse uppercase tracking-widest text-center">正在通过 Apify 卫星分析...<br><span class="text-[10px] text-slate-500 mt-2 font-normal">请确保网络连接正常</span></p>
+                    </div>
+
+                    <div id="outreachBox" class="text-sm text-slate-400 leading-relaxed whitespace-pre-wrap font-mono flex-1 overflow-y-auto italic pr-2">
+                        等待 AI 提取达人视频特征...
+                    </div>
+                    
+                    <button id="copyBtn" onclick="copyCurrent()" class="hidden mt-6 bg-slate-800 hover:bg-slate-700 text-teal-400 py-3 rounded-xl text-xs font-bold border border-teal-900/30 transition-all">
+                        复制当前定制模板 📋
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-800/50 border border-slate-700 rounded-3xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold flex items-center gap-2 text-slate-300">
+                    <span class="text-teal-500">📁</span> 历史联系记录 (CRM)
+                </h2>
+                <button onclick="clearAll()" class="text-[10px] text-red-500 hover:underline">清空记录</button>
+            </div>
+            <div id="historyList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
     </div>
 
     <script>
-        // === 1. 图表与数据处理部分 ===
-        let allRecords = [];
-        const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-        const colors = ['#3498db','#2ecc71','#e74c3c','#f1c40f','#9b59b6','#e67e22','#1abc9c','#34495e','#95a5a6','#d35400'];
+        // 🔴 重要：在此处填入你的 APIFY_TOKEN
+        const APIFY_TOKEN = "apify_api_xyvo38EW3IkZR9UZWbuinaZvxMvVyk40ebT1"; 
 
-        const bg = { id: 'bg', beforeDraw: (c) => { const ctx = c.ctx; ctx.save(); ctx.fillStyle = '#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.restore(); } };
+        async function runAIEngine() {
+            const vUrl = document.getElementById('videoUrl').value.trim();
+            const pUrl = document.getElementById('prodUrl').value.trim();
+            const btn = document.getElementById('runBtn');
+            const loader = document.getElementById('loader');
+            const box = document.getElementById('outreachBox');
 
-        let barChart = new Chart(document.getElementById('barChart').getContext('2d'), { type: 'bar', data: { labels: [], datasets: [] }, options: { responsive: true }, plugins: [bg] });
-        let pieChart = new Chart(document.getElementById('pieChart').getContext('2d'), { type: 'pie', data: { labels: ['硬件故障', '固件软件', '配件组装', '画质体验'], datasets: [{ data: [0,0,0,0], backgroundColor: ['#e74c3c', '#f1c40f', '#e67e22', '#3498db'] }] }, plugins: [bg] });
-        let lineChart = new Chart(document.getElementById('lineChart').getContext('2d'), { type: 'line', data: { labels: months, datasets: [{ label: '全系客诉总趋势', data: Array(12).fill(0), borderColor: '#3498db' }] }, plugins: [bg] });
+            if (!vUrl || !pUrl) { alert("请同时输入视频链接和产品链接！"); return; }
+            if (APIFY_TOKEN.includes("你的")) { alert("请先在代码内填入 APIFY Token！"); return; }
 
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            document.getElementById('uploadStatus').innerText = "⏳ 正在智能清洗并解析数据...";
-            document.getElementById('uploadStatus').style.color = "#f39c12";
+            loader.classList.remove('hidden');
+            btn.disabled = true;
+            box.innerText = "";
 
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                    
-                    allRecords = []; 
-                    let successCount = 0;
+            try {
+                // 使用官方推荐的同步 API 端点，URL 参数包含 Token 避开某些 CORS 限制
+                const endpoint = `https://api.apify.com/v2/acts/clockworks~tiktok-scraper/run-sync-get-dataset?token=${APIFY_TOKEN}`;
+                
+                // 方案一修改点：精简 Request Body 和 Headers
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        postURLs: [vUrl],
+                        resultsPerPage: 1,
+                        shouldDownloadVideos: false,
+                        shouldDownloadCovers: false
+                    })
+                });
 
-                    jsonData.forEach(row => {
-                        let cleanRow = {};
-                        for (let key in row) {
-                            if(key) {
-                                let cleanKey = key.replace(/[\\s\\uFEFF\\xA0]+/g, ''); 
-                                cleanRow[cleanKey] = row[key];
-                            }
-                        }
-
-                        let m = cleanRow['月份'] ? cleanRow['月份'].toString().trim() : '2月';
-                        if (!m.endsWith('月')) m += '月';
-                        
-                        const model = cleanRow['型号'] ? cleanRow['型号'].toString().trim().toUpperCase() : null;
-                        const issue = cleanRow['问题类型'] ? cleanRow['问题类型'].toString().trim() : null;
-                        const count = cleanRow['数量'] ? parseInt(cleanRow['数量']) : 1;
-
-                        if (model && issue) {
-                            allRecords.push({ month: m, model, issue, count });
-                            successCount++;
-                        }
-                    });
-
-                    renderCharts();
-                    
-                    if(successCount > 0) {
-                        document.getElementById('uploadStatus').innerText = "✅ 奇迹发生！成功过滤隐形空格，导入 " + successCount + " 条数据！";
-                        document.getElementById('uploadStatus').style.color = "#27ae60";
-                    } else {
-                        document.getElementById('uploadStatus').innerText = "❌ 未找到数据。请确认 Excel 表头真的是：月份、型号、问题类型、数量";
-                        document.getElementById('uploadStatus').style.color = "#e74c3c";
-                    }
-                } catch (err) {
-                    document.getElementById('uploadStatus').innerText = "❌ 解析出错：" + err.message;
+                if (!response.ok) {
+                    if(response.status === 401) throw new Error("Token 无效，请重新从 Apify 复制");
+                    if(response.status === 403) throw new Error("额度已耗尽或被防火墙拦截");
+                    throw new Error("服务器返回错误: " + response.status);
                 }
-                event.target.value = ''; 
-            };
-            reader.readAsArrayBuffer(file);
+
+                const data = await response.json();
+                if (!data || data.length === 0) throw new Error("API 未能抓取到视频数据，请确认链接有效");
+
+                const v = data[0];
+                const result = buildTemplate(v, pUrl);
+
+                box.innerText = result.template;
+                box.classList.remove('italic', 'text-slate-400');
+                document.getElementById('copyBtn').classList.remove('hidden');
+
+                saveHistory({
+                    id: Date.now(),
+                    handle: v.authorMeta.name || "Creator",
+                    product: result.productName,
+                    template: result.template,
+                    date: new Date().toLocaleString()
+                });
+
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                box.innerHTML = `<span class="text-red-400 font-bold">❌ 错误: ${err.message}</span>\n\n<span class="text-slate-500 text-xs">可能原因：\n1. 网络连接受限（请尝试切换网络环境）\n2. Token 或额度问题\n3. 视频链接不支持（如私密视频）</span>`;
+            } finally {
+                loader.classList.add('hidden');
+                btn.disabled = false;
+            }
         }
 
-        function renderCharts() {
-            const sel = document.getElementById('monthFilter').value;
-            const data = sel === '全部' ? allRecords : allRecords.filter(r => r.month === sel);
-            const issues = [...new Set(data.map(r => r.issue))];
-            const models = [...new Set(data.map(r => r.model))];
+        function buildTemplate(v, pUrl) {
+            const handle = v.authorMeta.name || "there";
+            const caption = (v.text || "").toLowerCase();
+            const lowP = pUrl.toLowerCase();
 
-            barChart.data.labels = issues;
-            barChart.data.datasets = models.map((m, i) => ({
-                label: m,
-                backgroundColor: colors[i % colors.length],
-                data: issues.map(iss => data.filter(r => r.model === m && r.issue === iss).reduce((s, r) => s + r.count, 0))
-            }));
-            barChart.update();
-
-            const pData = [0,0,0,0];
-            data.forEach(r => {
-                if(r.issue.includes('死机')||r.issue.includes('黑屏')||r.issue.includes('不开机')||r.issue.includes('不亮')) pData[0]+=r.count;
-                else if(r.issue.includes('WiFi')||r.issue.includes('漏秒')||r.issue.includes('模式')||r.issue.includes('GPS')) pData[1]+=r.count;
-                else if(r.issue.includes('支架')||r.issue.includes('配件')||r.issue.includes('线')||r.issue.includes('卡报错')) pData[2]+=r.count;
-                else pData[3]+=r.count;
-            });
-            pieChart.data.datasets[0].data = pData;
-            pieChart.update();
-
-            const lData = Array(12).fill(0);
-            allRecords.forEach(r => { const idx = months.indexOf(r.month); if(idx>-1) lData[idx]+=r.count; });
-            lineChart.data.datasets[0].data = lData;
-            lineChart.update();
-        }
-
-        function clearData() { allRecords = []; renderCharts(); document.getElementById('uploadStatus').innerText = "🗑️ 面板数据已清空"; }
-
-        // === 2. 专属智能邮件生成部分 ===
-        function generateEmail() {
-            const nameInput = document.getElementById('customerName').value.trim();
-            const name = nameInput ? nameInput : "there";
-            const model = document.getElementById('emailModel').value;
-            const issue = document.getElementById('emailIssue').value;
-            
-            let body = `Hello ${name},\n\nThank you for contacting us. I'm so sorry for the inconvenience you've experienced with ${model}. That's definitely not the experience we want for you.\n\n`;
-            
-            if (issue === 'hardware') {
-                body += `Based on your description, this seems to be a hardware or power issue. Could you please try removing the SD card and powering the cam at home with a mobile phone charger (5V/2A) to see if it turns on normally?\n\n`;
-                body += `If it still doesn't work, don't worry. We'd love to make this right. Please provide your delivery address (with postal code) and your recipient's name. We will send you a brand-new replacement unit ASAP!\n\n`;
-            } 
-            else if (issue === 'sdcard') {
-                body += `Dash cams constantly write and rewrite data, so SD card errors can happen over time. First, please find the "format" option in the dash cam system settings and format the memory card.\n\n`;
-                body += `If it still prompts an error after formatting, the card might be worn out. If you are using the memory card we provided, please share your delivery address (with postal code) and we will gladly send a new SD card to you ASAP.\n\n`;
-            } 
-            else if (issue === 'software') {
-                body += `Please don't worry, connection issues are often a common conflict with phone system settings, not a defect of the dash cam.\n\n`;
-                body += `Could you please try the following steps to fix it:\n`;
-                body += `1. Crucial Step: Temporarily turn OFF your phone's Cellular Data and VPN.\n`;
-                body += `2. Go to your Wi-Fi settings, find the dash cam's network, tap to "Forget This Network".\n`;
-                body += `3. Restart the dash cam and re-connect to the Wi-Fi.\n\n`;
-                body += `If it's still acting up, please let me know your phone model and iOS/Android version. I'll check with our tech team for a firmware update!\n\n`;
-            } 
-            else if (issue === 'accessory') {
-                body += `This is an easy fix! We can absolutely send you a replacement part for that.\n\n`;
-                body += `Could you please send us a quick photo of the damaged/missing part so we can make sure we send the exact correct accessory? \n\n`;
-                body += `Also, please provide your delivery address (including postal code and recipient's name), and we will ship the new accessory to you ASAP.\n\n`;
+            // 产品深度分析逻辑
+            let productName = "IIWEY Dash Cam";
+            let productUSP = "superior Sony sensor for night vision and stable loop recording.";
+            if (lowP.includes('n5') || lowP.includes('3-channel')) {
+                productName = "IIWEY N5 (3-Channel)";
+                productUSP = "3-way coverage (Front/Cabin/Rear) which effectively captures the cabin and side windows—a major safety upgrade.";
+            } else if (lowP.includes('carplay') || lowP.includes('screen')) {
+                productName = "Wireless CarPlay Display";
+                productUSP = "zero-lag wireless connectivity and 4K recording, ideal for modernizing older vehicles.";
             }
 
-            body += `If there is any further issue of the cam, please contact us without a doubt.\n\n`;
-            body += `Looking forward to you!\n`;
-            body += `Best wishes,\nCustomer Support Team`;
-            
-            document.getElementById('emailOutput').value = body;
+            // 语义化内容生成
+            let dynamicHook = `I saw your recent content and the engagement was impressive! Your car community clearly loves your style.`;
+            if (caption.includes('asmr') || caption.includes('setup')) {
+                dynamicHook = `The POV interior aesthetics and cinematic flow in your recent video are incredible. Your eye for detail is top-tier.`;
+            } else if (caption.includes('review') || caption.includes('test')) {
+                dynamicHook = `Your technical review depth is impressive. I saw your recent hardware test and really value your honest feedback.`;
+            }
+
+            const template = `Subject: Collaboration: A perfect fit for your channel style? (Idea for ${handle})
+
+Hi ${handle},
+
+${dynamicHook}
+
+I'm from IIWEY, and looking at the car gear you feature, I'm confident our ${productName} would be a great upgrade for your content. Why it fits your style:
+
+1. ${productUSP}
+2. It addresses real-world needs—${caption.includes('asmr') ? 'its minimalist design won\'t ruin your cabin aesthetic' : 'its true 4K clarity is perfect for hardware enthusiasts'}.
+3. We offer a free premium unit + professional commission.
+
+Are you open to an honest "Side-by-Side" test? We give you full creative freedom.
+
+Best regards,
+
+[Your Name]
+IIWEY Partnerships`;
+
+            return { template, productName };
         }
 
-        function copyEmail() {
-            const t = document.getElementById('emailOutput'); t.select(); document.execCommand("copy");
-            const btn = document.querySelector('button[onclick="copyEmail()"]');
-            btn.innerText = "✅ 复制成功"; btn.style.backgroundColor = "#27ae60";
-            setTimeout(() => { btn.innerText = "📋 一键复制"; btn.style.backgroundColor = "#27ae60"; }, 2000);
+        // --- CRM 存储逻辑 ---
+        function saveHistory(record) {
+            let history = JSON.parse(localStorage.getItem('iiwey_v4_history') || '[]');
+            history.unshift(record);
+            localStorage.setItem('iiwey_v4_history', JSON.stringify(history.slice(0, 50)));
+            loadHistory();
+        }
+
+        function loadHistory() {
+            const container = document.getElementById('historyList');
+            const history = JSON.parse(localStorage.getItem('iiwey_v4_history') || '[]');
+            if (history.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 text-xs italic col-span-full text-center py-10">暂无历史记录</p>`;
+                return;
+            }
+            container.innerHTML = history.map(item => `
+                <div class="bg-slate-900 border border-slate-700 p-4 rounded-2xl hover:border-teal-500/50 transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold text-teal-400">@${item.handle}</span>
+                        <button onclick="deleteItem(${item.id})" class="text-slate-600 hover:text-red-500">✕</button>
+                    </div>
+                    <div class="text-[10px] text-slate-500 mb-2">${item.date} | 📦 ${item.product}</div>
+                    <div class="flex gap-2">
+                        <button onclick="reloadItem(${item.id})" class="flex-1 bg-slate-800 text-[10px] py-2 rounded-lg hover:bg-slate-700">查看</button>
+                        <button onclick="copyOld(${item.id})" class="flex-1 bg-teal-900/20 text-teal-400 text-[10px] py-2 rounded-lg border border-teal-500/20">复制</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function reloadItem(id) {
+            const history = JSON.parse(localStorage.getItem('iiwey_v4_history') || '[]');
+            const item = history.find(i => i.id === id);
+            if (item) {
+                const box = document.getElementById('outreachBox');
+                box.innerText = item.template;
+                box.classList.remove('italic', 'text-slate-400');
+                document.getElementById('copyBtn').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function copyOld(id) {
+            const history = JSON.parse(localStorage.getItem('iiwey_v4_history') || '[]');
+            const item = history.find(i => i.id === id);
+            if (item) { navigator.clipboard.writeText(item.template); alert("已复制该模板！"); }
+        }
+
+        function deleteItem(id) {
+            let history = JSON.parse(localStorage.getItem('iiwey_v4_history') || '[]');
+            history = history.filter(i => i.id !== id);
+            localStorage.setItem('iiwey_v4_history', JSON.stringify(history));
+            loadHistory();
+        }
+
+        function clearAll() {
+            if(confirm("清空所有历史吗？")) { localStorage.removeItem('iiwey_v4_history'); loadHistory(); }
+        }
+
+        function copyCurrent() {
+            navigator.clipboard.writeText(document.getElementById('outreachBox').innerText);
+            alert("当前模板已复制！");
         }
     </script>
 </body>
